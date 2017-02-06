@@ -10,7 +10,7 @@
 //for FILE and fwrite
 #include <stdio.h>
 
-#define SERVER_PORT 12345
+#define SERVER_PORT 2559
 /* arbitrary, but client and server must agree */
 #define BUF_SIZE 4096
 

@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#define SERVER_PORT 12345 /* arbitrary, but client and server
+#define SERVER_PORT 2559 /* arbitrary, but client and server
 must agree */
 #define BUF_SIZE 4096 /* block transfer size */
 #define QUEUE_SIZE 10

@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+//for FILE and fwrite
+#include <stdio.h>
 
 #define SERVER_PORT 12345
 /* arbitrary, but client and server must agree */
@@ -19,7 +21,11 @@ int main(int argc, char **argv) {
     char buf[BUF_SIZE]; /* buffer for incoming file */
     struct hostent *h; /* info about server */
     struct sockaddr_in channel; /* holds IP address */
-    
+
+    /* create and open file*/
+    FILE * pFile;
+
+
     if (argc != 3) fatal("Usage: client server-name file-name");
     h = gethostbyname(argv[1]); /* look up host's IP address */
     if (!h) fatal("gethostbyname failed");
@@ -33,16 +39,20 @@ int main(int argc, char **argv) {
     channel.sin_port= htons(SERVER_PORT);
     c = connect(s, (struct sockaddr *) &channel, sizeof(channel));
     if (c < 0) fatal("connect failed");/* Connection is now established. Send file name including 0 byte at end. */
-    
+
     write(s, argv[2], strlen(argv[2])+1); /* Go get the file and write it to standard output. */
-    
+
+    pFile = fopen("./mypdf.pdf", "wb");
     while (1) {
         bytes = read(s, buf, BUF_SIZE); /* read from socket */
-        
+
         if (bytes <= 0) exit(0); /* check for end of file */
-        
-        write(1, buf, bytes); /* write to standard output */
+
+        //write(1, buf, bytes); /* write to standard output */
+
+        fwrite(buf, sizeof(char), BUF_SIZE, pFile);
     }
+    fclose(pFile);
 }
 
 

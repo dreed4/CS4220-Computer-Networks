@@ -7,8 +7,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <string.h>
 //for FILE and fwrite
 #include <stdio.h>
+#include <stdlib.h>
 
 #define SERVER_PORT 2559
 /* arbitrary, but client and server must agree */

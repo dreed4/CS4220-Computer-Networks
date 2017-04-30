@@ -2,16 +2,24 @@
 #include <sys/types.h> 
 #include <sys/socket.h> 
 #include <netinet/in.h>
-
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
 
 #define SERVER_UDP_PORT 2559 /* arbitrary, but client and server
 must agree */
 #define MAXLEN 4096 /* block transfer size */
 int main(int argc, char *argv[])
 {
-	int  sd, client_len, port, n;  
-	char  buf[MAXLEN];  
-	struct  sockaddr_in  server, client; 
+	int  sd, client_len, port, n, bytes, fd;  
+	char  buf[MAXLEN], sendbuf[MAXLEN];  
+	struct  sockaddr_in  server, client;
+	struct timeval start, end; 
+	float prob = 0.1;
+	printf("beginnning of fn\n");
  
  	switch(argc) {  
 	case 1:   
@@ -40,20 +48,95 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Can't bind name to socket\n");   
 		exit(1);  
 	}
-	
+	printf("before while loop\n");	
+	int sendfile = 0;
 	while (1) {   
+		printf("beginning of while loop\n");
 		client_len = sizeof(client);   
+		printf("got past client_len = ..\n");
+		sendfile = 0;
 		if ((n = recvfrom(sd, buf, MAXLEN, 0, (struct sockaddr *)&client, &client_len)) < 0) {         
 		fprintf(stderr, "Can't receive datagram\n");         
-		exit(1);   
-	} 
- 
-  		if (sendto(sd, buf, n, 0,    
+		exit(1);
+		}
+		else
+		{
+			printf("buf: %s\n", buf);
+			printf("n: %i\n", n);    
+		}
+		if (n>0)
+			sendfile = 1;
+			fd = open(buf, O_RDONLY);
+			if (fd<0) 
+			{
+				fprintf(stderr,"open failed");
+				exit(1);
+			}
+		printf("made it this far...\n");	
+  		//for testing, right now we're just sending the filename
+  		//back to the client
+  		/*
+		if (sendto(sd, buf, strlen(buf), 0,    
 		(struct sockaddr *)&client, client_len) != n) {         
 			fprintf(stderr, "Can't send datagram\n");         
 			exit(1);   
-		}  
+		}
+		*/
+
+		//loop to start sending blocks/packets
+		while(sendfile == 1) {
+			bytes = read(fd, sendbuf, MAXLEN);
+			printf("bytes: %i\n", bytes);
+			if (bytes == 0) break; //end of file
+			if (bytes == -1)
+			{
+				printf("bytes returned: %i\n", bytes);
+				printf("exiting with error..\n");
+				exit(1);
+			}
+			/*
+			if (sendto(sd, sendbuf, bytes, 0,
+			(struct sockaddr *)&client, client_len) != strlen(sendbuf)) {
+				fprintf(stderr, "can't send datagram\n");
+				exit(1);
+			}
+			*/
+			
+			sendto(sd, sendbuf, bytes, 0,
+                        (struct sockaddr *)&client, client_len);
+			//printf("sendbuf sent: %s\n", sendbuf);
+			usleep(300);
+		}
+		printf("finished sending file..\n");
+		close(fd);   
 	}
 	close(sd);
 	return(0);
+}
+int drop_packet(float prob)
+{
+	srand(time(NULL));
+	int random_number = rand();
+	int n = 9;
+	int rand_capped = random_number % n;//between 0 and 9
+	
+	int amount = prob * 10;
+	int actualhigh = amount - 1;
+	int actuallow = 0;
+	int dodrop = 0;
+	if (rand_capped >= actuallow && rand_capped <= actualhigh)
+	{
+		dodrop = 1;
+	}
+
+	return dodrop;
+}
+long delay(struct timeval t1, struct timeval t2)
+{
+	long d;
+	d = (t2.tv_sec - t1.tv_sec) * 1000;
+	d += ((t2.tv_usec - t1.tv_usec + 500)/1000);
+	return(d);
+	
+
 }

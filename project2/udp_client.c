@@ -4,6 +4,7 @@
 * The server responds by opening and returning the entire file requested.  */
 
 #include <sys/types.h>
+#include <sys/fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -23,12 +24,19 @@
 int main(int argc, char **argv)
 {
 	int data_size = DEFLEN, port = SERVER_UDP_PORT;
-        int     i, j, sd, server_len;
+        int     i, j, sd, server_len, n, fd;
         char    *pname, *host, rbuf[MAXLEN], sbuf[MAXLEN];
+
+	//hard-coding the filename so that i don't have to mess with args right now
+	//this can be fixed, but maybe not necessary
+	char 	filename[] = "thefile.pdf";
+
         struct  hostent *hp;
         struct  sockaddr_in server;
         struct  timeval start, end;
         unsigned long address;
+	
+	FILE * pFile;
 	
 	pname = argv[0];
 	argc--;
@@ -78,32 +86,69 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Data is too big\n");                 
 		exit(1);         
 	}
-
+	//this for loop is useless, commenting out for now
+	/*
 	for (i = 0; i < data_size; i++) 
 	{                 
 		j = (i < 26) ? i : i % 26;                 
 		sbuf[i] = 'a' + j;         
 	} // construct data to send to the server
-
+	*/
 	gettimeofday(&start, NULL); /* start delay measurement */  
 	server_len = sizeof(server);
 
-	if (sendto(sd, sbuf, data_size, 0, (struct sockaddr *)                 
+	//note that we are passing in filename as the information to send
+	//also, passing strlen(filename) as buffer size
+	//Do i need to consider the terminating char though?
+	//tcp_client shows that the answer would be yes, as it is passed in as
+	//strlen(argv[2]+1) in that file
+	if (sendto(sd, filename, strlen(filename), 0, (struct sockaddr *)                 
 		&server, server_len) == -1) {                 
 		fprintf(stderr, "sendto error\n");                 
 		exit(1);         
 	}
-
-	if (recvfrom(sd, rbuf, MAXLEN, 0, (struct sockaddr *)                 
+	/*
+	if (n = recvfrom(sd, rbuf, MAXLEN, 0, (struct sockaddr *)                 
 		&server, &server_len) < 0) {                 
 		fprintf(stderr, "recvfrom error\n");                 
 		exit(1);         
 	}
+	printf("rbuf: %s\n", rbuf);
+	printf("n: %d\n", n);
+	*/
+	pFile = fopen("./transferred.pdf", "wb");
+	printf("before while..\n");	
+	int packetnum = 1;
+	while(1) {
+		printf("before recvfrom\n");
+		n = recvfrom(sd, rbuf, MAXLEN, 0, (struct sockaddr *) &server, &server_len);
+		printf("n: %i\n", n);
+		printf("pakcetnum: %i\n", packetnum);
+		packetnum++;
+		if (n < MAXLEN) 
+		{	
+			if (n > 0)
+			{
+				//one last write
+				fwrite(rbuf, sizeof(char), strlen(rbuf), pFile);
+			}
+			printf("no more.. time to close..\n");
+			fclose(pFile);
+			close(sd);
+			exit(0);
+		}
+		fwrite(rbuf, sizeof(char), MAXLEN, pFile);
+		
+	}
+	fclose(pFile); 
+	gettimeofday(&end, NULL); /* end delay measurement */         
 	
-	 gettimeofday(&end, NULL); /* end delay measurement */         
-	if (strncmp(sbuf, rbuf, data_size) != 0)                 
+	//is this relevant to us?
+	if (strncmp(sbuf, rbuf,strlen(filename) /*data_size*/) != 0)                 
 		printf("Data is corrupted\n");         
-	close(sd);         
+	
+	close(sd);
+	printf("reached end of main\n");         
 	return(0); 
 }
 long delay(struct timeval t1, struct timeval t2)

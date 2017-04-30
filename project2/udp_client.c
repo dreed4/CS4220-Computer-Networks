@@ -24,7 +24,7 @@
 int main(int argc, char **argv)
 {
 	int data_size = DEFLEN, port = SERVER_UDP_PORT;
-        int     i, j, sd, server_len, n, fd;
+        int     i, j, sd, server_len, n, fd, arqprot;
         char    *pname, *host, rbuf[MAXLEN], sbuf[MAXLEN];
 
 	//hard-coding the filename so that i don't have to mess with args right now
@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 	pname = argv[0];
 	argc--;
 	argv++;
+	arqprot = 3;
 
 	if (argc > 0 && (strcmp(*argv, "-s") == 0)) {
 		if (--argc > 0 && (data_size = atoi(*++argv))) 
@@ -58,7 +59,9 @@ int main(int argc, char **argv)
 	{                 
 		host = *argv;                 
 		if (--argc > 0)                         
-			port = atoi(*++argv);         
+			port = atoi(*++argv);
+		if (--argc > 0)
+			arqprot = atoi(*++argv);         
 	} 
  	else 
 	{   
@@ -119,7 +122,22 @@ int main(int argc, char **argv)
 	pFile = fopen("./transferred.pdf", "wb");
 	printf("before while..\n");	
 	int packetnum = 1;
-	while(1) {
+	//stop-and-wait
+	while(arqprot == 1)
+	{	
+		//receive packet
+		n = recvfrom(sd, rbuf, MAXLEN, 0, (struct sockaddr *) &server, &server_len);
+		printf("n: %i\n", n);
+		printf("packetnum: %i\n", packetnum);
+		
+		
+		
+		
+		
+	}
+		
+	//old non-arq loop
+	while(arqprot == 3) {
 		printf("before recvfrom\n");
 		n = recvfrom(sd, rbuf, MAXLEN, 0, (struct sockaddr *) &server, &server_len);
 		printf("n: %i\n", n);
@@ -140,6 +158,7 @@ int main(int argc, char **argv)
 		fwrite(rbuf, sizeof(char), MAXLEN, pFile);
 		
 	}
+	
 	fclose(pFile); 
 	gettimeofday(&end, NULL); /* end delay measurement */         
 	

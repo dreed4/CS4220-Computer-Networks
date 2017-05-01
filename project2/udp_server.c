@@ -17,6 +17,8 @@ int shoulddrop(float prob);
 
 int main(int argc, char *argv[])
 {
+	
+	srand(time(NULL));
 	int  sd, client_len, port, n, m, bytes, fd, arqprot, ackbuf;  
 	char  buf[MAXLEN], sendbuf[MAXLEN], strackbuf[4];
 	struct  sockaddr_in  server, client;
@@ -131,7 +133,7 @@ int main(int argc, char *argv[])
 				n = 0;
 				//printf("in waiting loop\n");
 				if((n = recvfrom(sd, strackbuf, MAXLEN, MSG_DONTWAIT, (struct sockaddr *)&client, &client_len)) < 0) {         
-					printf("n: %i\n", n);
+					//printf("n: %i\n", n);
 					gettimeofday(&end, NULL);
 					elapsedTime = (end.tv_sec - start.tv_sec) * 1000.0;
 					if(elapsedTime >= 300)
@@ -293,7 +295,6 @@ int main(int argc, char *argv[])
 
 int shoulddrop(float prob)
 {
-	srand(time(NULL));
 	int random_number = rand();
 	int n = 9;
 	int rand_capped = random_number % n;//between 0 and 9

@@ -25,7 +25,8 @@ int main(int argc, char **argv)
 {
 	int data_size = DEFLEN, port = SERVER_UDP_PORT;
         int     i, j, sd, server_len, n, fd, arqprot;
-        char    *pname, *host, rbuf[MAXLEN], sbuf[MAXLEN], ackbuf[sizeof(int)*6];
+        char    *pname, *host, rbuf[MAXLEN], sbuf[MAXLEN];
+	char * ackbuf[sizeof(int)];
 
 	//hard-coding the filename so that i don't have to mess with args right now
 	//this can be fixed, but maybe not necessary
@@ -131,11 +132,12 @@ int main(int argc, char **argv)
 			printf("err...\n");
 			continue;
 		}
-		snprintf(ackbuf,sizeof(int)*6, "%d", n);
+		sprintf(ackbuf,"%d", n);
 		//itoa(n, ackbuf, 10);
 		printf("n: %i\n", n);
 		printf("pakcetnum: %i\n", packetnum);
-		printf("ackbuf: %d\n", ackbuf);
+		printf("ackbuf: %s\n", ackbuf);
+		//printf("rbuf: %s\n", rbuf);
 		packetnum++;
 		if (n < MAXLEN) 
 		{	

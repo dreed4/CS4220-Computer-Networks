@@ -25,9 +25,21 @@ int main(int argc, char *argv[])
 	struct timeval start, end;
 	double elapsedTime;
 	int  prob = 0.1;
+
+	FILE *ofp;
+	char outputFilename[] = "server_log";
+	ofp = fopen(outputFilename, "w");
+	if (ofp == NULL) {
+		fprintf(stderr, "Can't open output file %s!\n",
+			outputFilename);
+		exit(1);
+
+	}
+
 	arqprot = 3;
+	fprintf(ofp, "Server Starting..\n\n");
 	printf("beginning of fn\n");
- 
+ 	
  	switch(argc) {  
 	case 3:   
 		port = SERVER_UDP_PORT;
@@ -46,6 +58,7 @@ int main(int argc, char *argv[])
 	/* Create a datagram socket */
 	if ((sd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) { 
   		fprintf(stderr, "Can't create a socket\n");   
+		fprintf(ofp, "Can't create a socket, stopping server!\n\n");
 		exit(1);  
 	}
 	
@@ -57,11 +70,13 @@ int main(int argc, char *argv[])
 	if (bind(sd, (struct sockaddr *)&server,   sizeof(server)) == -1) 
 	{   
 		fprintf(stderr, "Can't bind name to socket\n");   
+		fprintf(ofp, "Can't bind name to socket, stopping server!\n\n");
 		exit(1);  
 	}
 	printf("before while loop\n");	
 	int sendfile = 0;
-	
+	if (arqprot == 1)
+		fprintf(ofp, "ARQ Protocol: Stop-and-wait\n");    
 	while (arqprot == 1) {   
 		
 		printf("beginning of while loop\n");
@@ -70,24 +85,37 @@ int main(int argc, char *argv[])
 		sendfile = 0;
 		
 		if ((n = recvfrom(sd, buf, MAXLEN, 0, (struct sockaddr *)&client, &client_len)) < 0) {         
-		fprintf(stderr, "Can't receive datagram\n");         
-		exit(1);
+			fprintf(stderr, "Can't receive datagram\n");         
+			fprintf(ofp, "Can't receive datagram, stopping server!\n\n");
+			exit(1);
 		}
 		else
 		{
 			printf("buf: %s\n", buf);
-			printf("n: %i\n", n);    
+			printf("n: %i\n", n);
+			
 		}
 		
-		if (n>0)
+		if (n>0){
+			
+			fprintf(ofp, "Client request..\n");    
 			sendfile = 1;
 			fd = open(buf, O_RDONLY);
+			if (ofp == NULL) {
+				fprintf(stderr, "Can't open output file %s!\n",
+				outputFilename);
+				exit(1);
+
+			}
 			if (fd<0) 
 			{
 				fprintf(stderr,"open failed");
+				
+				fprintf(ofp, "File open fail, stopping server!\n\n");    
 				exit(1);
 			}
-		printf("made it this far...\n");	
+		}
+		printf("made it this far...\n");
   		//for testing, right now we're just sending the filename
   		//back to the client
   		/*
@@ -107,6 +135,9 @@ int main(int argc, char *argv[])
 			{
 				printf("bytes returned: %i\n", bytes);
 				printf("exiting with error..\n");
+				
+				
+				fprintf(ofp, "Error, exiting!\n\n");    
 				exit(1);
 			}
 			/*
@@ -128,6 +159,8 @@ int main(int argc, char *argv[])
 			else
 			{
 				printf("Packet was dropped\n");
+				
+				fprintf(ofp, "Packet dropped! oh no!\n");    
 			}
 			//printf("sendbuf sent: %s\n", sendbuf);
 			while(1)
@@ -144,10 +177,14 @@ int main(int argc, char *argv[])
 						if(drop != 1)
 						{
 							m = sendto(sd, sendbuf, bytes, 0, (struct sockaddr *)&client, client_len);
+							
+							fprintf(ofp, "Resending Packet..\n");    
 						}
 						else
 						{
 							printf("Packet was dropped\n");
+							
+							fprintf(ofp, "Packet resend dropped! Could this get any worse?!\n");    
 						}
 						gettimeofday(&start, NULL);
 						continue;
@@ -158,16 +195,23 @@ int main(int argc, char *argv[])
 				{
 					ackbuf = atoi(strackbuf);
 					printf("ackbuf: %i\n", ackbuf);
+					
+					fprintf(ofp, "#number bytes received by client: %i\n", ackbuf);    
 					if(ackbuf == m)
 					{
 						printf("acknowledgement Recieved..\n");
+						
+						fprintf(ofp, "Acknowledgment Received!\n");    
 						break;
 					}
 				}
 			}
 		}
 		printf("finished sending file..\n");
-		close(fd);   
+		
+		fprintf(ofp, "Finished sending file..\n\n\n");    
+		close(fd);
+		fclose(ofp);  
 	}
 	
 	while (arqprot == 2) {   
@@ -228,7 +272,8 @@ int main(int argc, char *argv[])
 			usleep(300);
 		}
 		printf("finished sending file..\n");
-		close(fd);   
+		close(fd);
+		fclose(ofp);   
 	}
 	
 	while (arqprot == 3) {   
@@ -288,10 +333,13 @@ int main(int argc, char *argv[])
 			//printf("sendbuf sent: %s\n", sendbuf);
 			usleep(300);
 		}
-		printf("finished sending file..\n");
-		close(fd);   
+		printf("finished sending file..\n\n");
+		close(fd);
+		fclose(ofp);   
 	}
 	close(sd);
+	fclose(ofp);
+	fprintf(ofp, "goodbye!!\n\n");    
 	return(0);
 }
 

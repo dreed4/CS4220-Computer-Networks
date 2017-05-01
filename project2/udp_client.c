@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 {
 	int data_size = DEFLEN, port = SERVER_UDP_PORT;
         int     i, j, sd, server_len, n, fd, arqprot;
-        char    *pname, *host, rbuf[MAXLEN], sbuf[MAXLEN];
+        char    *pname, *host, rbuf[MAXLEN], sbuf[MAXLEN], ackbuf[4];
 
 	//hard-coding the filename so that i don't have to mess with args right now
 	//this can be fixed, but maybe not necessary
@@ -125,15 +125,41 @@ int main(int argc, char **argv)
 	//stop-and-wait
 	while(arqprot == 1)
 	{	
-		//receive packet
+		printf("before recvfrom\n");
 		n = recvfrom(sd, rbuf, MAXLEN, 0, (struct sockaddr *) &server, &server_len);
+		snprintf(ackbuf, sizeof(ackbuf), "%d", n);
 		printf("n: %i\n", n);
-		printf("packetnum: %i\n", packetnum);
-		
-		
-		
-		
-		
+		printf("pakcetnum: %i\n", packetnum);
+		packetnum++;
+		if (n < MAXLEN) 
+		{	
+			if (n > 0)
+			{
+				//one last write
+				fwrite(rbuf, sizeof(char), strlen(rbuf), pFile);
+				//send ack
+				if (sendto(sd, ackbuf, sizeof(ackbuf), 0, (struct sockaddr *) &server, server_len) == -1) 
+				{		                 
+					fprintf(stderr, "sendto error\n");
+					exit(1);         
+				}
+				fclose(pFile);
+				close(sd);
+				exit(0);
+			}
+			else
+			{
+				continue;
+			}
+				
+		}
+		fwrite(rbuf, sizeof(char), MAXLEN, pFile);
+		//send ack
+		if (sendto(sd, ackbuf, sizeof(ackbuf), 0, (struct sockaddr *) &server, server_len) == -1) 
+		{                 
+			fprintf(stderr, "sendto error\n");                 
+			exit(1);         
+		}
 	}
 		
 	//old non-arq loop

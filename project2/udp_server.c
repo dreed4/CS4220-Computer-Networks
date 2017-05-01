@@ -27,11 +27,11 @@ int main(int argc, char *argv[])
 	printf("beginning of fn\n");
  
  	switch(argc) {  
-	case 1:   
+	case 2:   
 		port = SERVER_UDP_PORT;
 		arqprot = atoi(argv[1]);
 		break;  
-	case 2:   
+	case 3:   
 		port = atoi(argv[1]);
 		arqprot = atoi(argv[2]);
 		break;  

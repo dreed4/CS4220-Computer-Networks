@@ -13,7 +13,7 @@
 must agree */
 #define MAXLEN 4096 /* block transfer size */
 
-int shoulddrop(float prob);
+int shoulddrop(int prob);
 
 int main(int argc, char *argv[])
 {
@@ -24,21 +24,23 @@ int main(int argc, char *argv[])
 	struct  sockaddr_in  server, client;
 	struct timeval start, end;
 	double elapsedTime;
-	float prob = 0.1;
+	int  prob = 0.1;
 	arqprot = 3;
 	printf("beginning of fn\n");
  
  	switch(argc) {  
-	case 2:   
+	case 3:   
 		port = SERVER_UDP_PORT;
 		arqprot = atoi(argv[1]);
+		prob = atoi(argv[2]);	
 		break;  
-	case 3:   
+	case 4:   
 		port = atoi(argv[1]);
 		arqprot = atoi(argv[2]);
+		prob = atoi(argv[3]);
 		break;  
 	default:   
-		fprintf(stderr, "Usage: %s [port] [protocol]\n", argv[0]);   exit(1);  
+		fprintf(stderr, "Usage: %s [port] [protocol] [int percentage packet drop]\n", argv[0]);   exit(1);  
 	}
 
 	/* Create a datagram socket */
@@ -293,13 +295,13 @@ int main(int argc, char *argv[])
 	return(0);
 }
 
-int shoulddrop(float prob)
+int shoulddrop(int prob)
 {
 	int random_number = rand();
-	int n = 9;
-	int rand_capped = random_number % n;//between 0 and 9
+	int n = 99;
+	int rand_capped = random_number % n;//between 0 and 99
 	
-	int amount = (int)(prob * 10);
+	int amount = prob;
 	int actualhigh = amount - 1;
 	int actuallow = 0;
 	int dodrop = 0;

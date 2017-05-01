@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 			if(drop != 1)
 			{
 				m = sendto(sd, sendbuf, bytes, 0, (struct sockaddr *)&client, client_len);
+				
 			}
 			else
 			{
@@ -127,7 +128,10 @@ int main(int argc, char *argv[])
 			//printf("sendbuf sent: %s\n", sendbuf);
 			while(1)
 			{
-				if((n = recvfrom(sd, strackbuf, MAXLEN, 0, (struct sockaddr *)&client, &client_len)) < 0) {         
+				n = 0;
+				//printf("in waiting loop\n");
+				if((n = recvfrom(sd, strackbuf, MAXLEN, MSG_DONTWAIT, (struct sockaddr *)&client, &client_len)) < 0) {         
+					printf("n: %i\n", n);
 					gettimeofday(&end, NULL);
 					elapsedTime = (end.tv_sec - start.tv_sec) * 1000.0;
 					if(elapsedTime >= 300)
@@ -146,11 +150,16 @@ int main(int argc, char *argv[])
 					}
 					continue;
 				}	
-			}
-			ackbuf = atoi(strackbuf);
-			if(ackbuf == m)
-			{
-				printf("acknowledgement Recieved..\n");
+				else
+				{
+					ackbuf = atoi(strackbuf);
+					printf("ackbuf: %i\n", ackbuf);
+					if(ackbuf == m)
+					{
+						printf("acknowledgement Recieved..\n");
+						break;
+					}
+				}
 			}
 		}
 		printf("finished sending file..\n");
